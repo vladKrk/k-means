@@ -18,33 +18,20 @@ print("----------------------------------")
 print("Начальные центры кластеров: ", Y)
 it = 0
 while it < MAX_ITERATIONS:
-    NEW_CENTERS = np.zeros((COUNT_OF_CLASTERS, M)) #Новые центры кластеров
-    POINTS_IN_CLASTER = np.zeros(COUNT_OF_CLASTERS) #Количество точек в каждом кластере
+    dist1 = X - Y[:, np.newaxis]
+    distances = np.sqrt((dist1**2).sum(axis = 2))
+    closest_centroids = np.argmin(distances, axis = 0)
+    NEW_CENTERS = np.zeros((COUNT_OF_CLASTERS, M))
+    COUNT_OF_POINTS = np.zeros(COUNT_OF_CLASTERS)
+    for i, c in enumerate(closest_centroids):
+        NEW_CENTERS[c] += X[i]
+        COUNT_OF_POINTS[c] += 1
 
-    for i, pointX in enumerate(X):
-        Min = -1
-        minIndex = -1
-        for index, pointY in enumerate(Y):
-            dist = np.sqrt(np.sum((pointX - pointY)**2)) 
-            if(minIndex == -1):
-                Min = dist
-                minIndex = index
-            else:
-                if Min > dist:
-                    Min = dist
-                    minIndex = index
-        #Добавляем точку к определенному центру
-        NEW_CENTERS[minIndex] += X[i]
-        #Увеличиваем количество точек в данном кластере на 1 
-        POINTS_IN_CLASTER[minIndex] += 1
-    #Для каждого кластера делим сумму точек на их количество
-    for index, center in enumerate(NEW_CENTERS):
-        if(POINTS_IN_CLASTER[index] != 0):
-            NEW_CENTERS[index] = center / POINTS_IN_CLASTER[index]
+    for i in range(COUNT_OF_CLASTERS):
+        if(COUNT_OF_POINTS[i] != 0):
+            NEW_CENTERS[i] /= COUNT_OF_POINTS[i]
         else:
-            #Если в кластере нет точек, просто оставляем его центр начальным
-            NEW_CENTERS[index] = Y[index]
-    #Меняем центры кластеров на новые
+            NEW_CENTERS[i] = Y[i]
     Y = NEW_CENTERS.copy()
     it += 1
 
