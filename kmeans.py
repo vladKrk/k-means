@@ -1,98 +1,52 @@
-import matplotlib.pyplot as plt
-import matplotlib
 import numpy as np
-from random import random, choice
 
 #--------------------
-#Меняя первые две константы получаем разные результаты
-COUNT_OF_CLASTERS = 5
-NUMBER_OF_POINTS = 100
-
-MAX_ITERATIONS = 100
+#Меняя первые три константы получаем разные результаты
+COUNT_OF_CLASTERS = 3 #Количество кластеров
+N = 5 #Количество точек
+M = 5 #Размерность пространства
+#--------------------
+MAX_ITERATIONS = 100 
 #--------------------
 
-class Point:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-    def update(self, x, y):
-        self.x = x
-        self.y = y
+#Генерируем набор случайных точек размерности N x M
+X = np.random.rand(N, M)
 
-class Claster:
-    def __init__(self, center, color):
-        self.center = center
-        self.color = color
-        self.points = []
-    def addPoint(self, a):
-        self.points.append(a)
-    def updateCenter(self):
-        xCenter = 0
-        yCenter = 0
-        for point in self.points:
-            xCenter += point.x
-            yCenter += point.y
-        self.center = Point(xCenter / len(self.points), yCenter / len(self.points))
-        self.points.clear()
-
-#--------------------
-
-def distance(a, b):
-    return (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)
-
-#--------------------
-
-#Генерируем набор случайных точек
-x = np.random.rand(NUMBER_OF_POINTS)
-y = np.random.rand(NUMBER_OF_POINTS)
-
-
-clasters = []
-colors = []
-#Случайным образом генериоруем наши кластеры (выбираем центры и цвета)
-for i in range(COUNT_OF_CLASTERS):
-    while(True):
-        item = choice(list(matplotlib.colors.cnames.items()))
-        if(item[1] not in colors):
-            break
-    colors.append(item[1])
-    clasters.append(Claster(Point(random(), random()), item[1]))
-
-#Содаем окна с точками
-fig1, ax1 = plt.subplots()
-ax1.scatter(x, y, c = "g", edgecolors = 'black')
-fig2, ax2 = plt.subplots()
-ax2.scatter(x, y, c = "g", edgecolors = 'black')
-#----------------------
-
+#Генерируем набор точек кластеров размерности C x M
+Y = np.random.rand(COUNT_OF_CLASTERS, M)
+print("----------------------------------")
+print("Начальные центры кластеров: ", Y)
 it = 0
-point = Point(0, 0)
 while it < MAX_ITERATIONS:
+    NEW_CENTERS = np.zeros((COUNT_OF_CLASTERS, M)) #Новые центры кластеров
+    POINTS_IN_CLASTER = np.zeros(COUNT_OF_CLASTERS) #Количество точек в каждом кластере
 
-    #Обновляем центры кластеров
-    if it != 0:
-        for i in range(COUNT_OF_CLASTERS):
-            clasters[i].updateCenter()
-    
-    for i in range(NUMBER_OF_POINTS):
-        Min = 9999
+    for i, pointX in enumerate(X):
+        Min = -1
         minIndex = -1
-        point.update(x[i], y[i])
-        #Ищем ближайший к точке кластер
-        for j in range(COUNT_OF_CLASTERS):
-            dis = distance(clasters[j].center, point)
-            if dis < Min:
-                Min = dis
-                minIndex = j
-        #Добавляем к найденому кластеру точку
-        clasters[minIndex].addPoint(Point(x[i], y[i]))
+        for index, pointY in enumerate(Y):
+            dist = np.sqrt(np.sum((pointX - pointY)**2)) 
+            if(minIndex == -1):
+                Min = dist
+                minIndex = index
+            else:
+                if Min > dist:
+                    Min = dist
+                    minIndex = index
+        #Добавляем точку к определенному центру
+        NEW_CENTERS[minIndex] += X[i]
+        #Увеличиваем количество точек в данном кластере на 1 
+        POINTS_IN_CLASTER[minIndex] += 1
+    #Для каждого кластера делим сумму точек на их количество
+    for index, center in enumerate(NEW_CENTERS):
+        if(POINTS_IN_CLASTER[index] != 0):
+            NEW_CENTERS[index] = center / POINTS_IN_CLASTER[index]
+        else:
+            #Если в кластере нет точек, просто оставляем его центр начальным
+            NEW_CENTERS[index] = Y[index]
+    #Меняем центры кластеров на новые
+    Y = NEW_CENTERS.copy()
     it += 1
 
-#В итоге просто отрисовываем точки каждого кластера в своем цвете
-for i in range(COUNT_OF_CLASTERS):
-    for point in clasters[i].points:
-        ax2.scatter(point.x, point.y, c = clasters[i].color, edgecolors = 'black')
-    #Тут также нарисуем центры кластеров
-    ax2.scatter(clasters[i].center.x, clasters[i].center.y, s = 80, c = 'black', edgecolors = 'red')
-
-plt.show()
+print("----------------------------------")
+print("Конечные центры кластеров: ", Y)
